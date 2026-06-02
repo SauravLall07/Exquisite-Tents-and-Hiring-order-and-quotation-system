@@ -38,7 +38,7 @@ export default function QuoteResult(){
 
       <div className="mt-4 p-4 bg-gray-100 rounded">
         <div className="text-sm text-gray-600">Estimated total</div>
-        <div className="text-2xl font-bold mt-1">£{quote?.total?.toFixed(2)}</div>
+        <div className="text-2xl font-bold mt-1">R{quote?.total?.toFixed(2)}</div>
       </div>
     </div>
   )

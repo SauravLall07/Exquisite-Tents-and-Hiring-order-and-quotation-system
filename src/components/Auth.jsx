@@ -1,144 +1,75 @@
-import React, { useState, useEffect } from 'react'
-import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase, getCurrentUser, onAuthChange, getProfile } from '../lib/supabaseClient'
+import React, { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../lib/AuthContext'
 
 export default function Auth(){
+  const { user, profile } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
   const [sending, setSending] = useState(false)
-
-  useEffect(()=>{
-    let mounted = true
-    let sub = onAuthChange(async (u)=>{
-      setUser(u)
-      if(u?.id){
-        // ensure a profile row exists for this user (non-staff by default)
-        try{
-          await supabase.from('profiles').upsert({ id: u.id, email: u.email || null, full_name: null, is_staff: false })
-        } catch(e){ /* ignore */ }
-        const prof = await getProfile(u.id)
-        if(mounted) setProfile(prof)
-      } else {
-        if(mounted) setProfile(null)
-      }
-    })
-    getCurrentUser().then(async u=>{
-      if(mounted) setUser(u)
-      if(u?.id){
-        try{ await supabase.from('profiles').upsert({ id: u.id, email: u.email || null, full_name: null, is_staff: false }) }catch(e){}
-        const prof = await getProfile(u.id); if(mounted) setProfile(prof)
-      }
-    })
-    return ()=>{ mounted = false; sub?.subscription?.unsubscribe?.(); if(sub?.unsubscribe) sub.unsubscribe() }
-  }, [])
+  const [needsConfirm, setNeedsConfirm] = useState(false)
 
   async function signIn(){
     setSending(true)
+    setNeedsConfirm(false)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setSending(false)
-    if(error) alert('Sign-in failed: ' + error.message)
+    if(error){
+      const unconfirmed = /confirm|confirmation|verify|not confirmed/i.test(error.message)
+      if(unconfirmed) setNeedsConfirm(true)
+      alert(
+        `Sign-in failed: ${error.message}` +
+        (unconfirmed ? '\n\nPlease check your inbox (and spam folder) for a confirmation email, then try again.' : '')
+      )
+    }
   }
 
   async function signUp(){
     setSending(true)
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    setNeedsConfirm(false)
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    })
     setSending(false)
     if(error){
       alert('Sign-up failed: ' + error.message)
-    } else if(data?.user){
-      alert('Account created successfully. You are now signed in.')
+    } else if(data?.user && data?.session){
+      alert('Account created and signed in successfully.')
     } else {
-      alert('Sign-up successful. Please check your email to confirm your account.')
+      setNeedsConfirm(true)
+      alert(
+        `Sign-up successful!\n\nA confirmation email has been sent to ${email}.\n` +
+        'Please check your inbox and spam folder, then click the confirmation link before signing in.'
+      )
     }
   }
 
-  function timeout(ms){
-    return new Promise((_, reject) => setTimeout(() => reject(new Error('Sign out timed out')), ms))
-  }
-
-  function clearLocalAuthSession(){
-    try {
-      Object.keys(localStorage).forEach(key => {
-        const lower = key.toLowerCase()
-        if(lower.includes('supabase') || lower.includes('sb-') || lower.includes('auth')){
-          localStorage.removeItem(key)
-        }
-      })
-      console.debug('Cleared local auth session storage')
-    } catch (e) {
-      console.warn('Failed to clear local auth session storage', e)
-    }
-  }
-
-  async function fetchLogoutFallback(accessToken){
-    if(!SUPABASE_URL){
-      console.warn('No SUPABASE_URL available for logout fallback')
-      return false
-    }
-    try {
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': accessToken ? `Bearer ${accessToken}` : '',
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      })
-      console.debug('Fallback logout response', response.status, await response.text())
-      return response.ok
-    } catch (e) {
-      console.error('Fallback logout request failed', e)
-      return false
-    }
+  async function resendConfirmation(){
+    if(!email){ alert('Enter your email address first.'); return }
+    setSending(true)
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    setSending(false)
+    if(error) alert('Could not resend: ' + error.message)
+    else alert(`Confirmation email resent to ${email}. Check your inbox and spam folder.`)
   }
 
   async function signOut(){
     setSending(true)
-    let signedOut = false
-    console.log('Starting sign out...')
-    let session = null
     try {
-      const sessionResult = await supabase.auth.getSession()
-      session = sessionResult.data?.session
-      console.log('Current session', session)
-    } catch (e) {
-      console.warn('Failed to get auth session before sign out', e)
-    }
-
-    try {
-      const { error } = await Promise.race([
+      await Promise.race([
         supabase.auth.signOut(),
-        timeout(10000),
+        new Promise(resolve => setTimeout(resolve, 5000)),
       ])
-      if(error){
-        console.error('Sign out failed', error)
-        alert('Sign out failed: ' + error.message)
-      } else {
-        signedOut = true
-        console.log('User signed out successfully')
-      }
-    } catch (e) {
-      console.error('Sign out exception', e)
-      alert('Sign out failed: ' + (e?.message || 'unknown error'))
-      if(e?.message?.includes('timed out')){
-        console.log('Attempting fallback logout request')
-        signedOut = await fetchLogoutFallback(session?.access_token)
-        if(signedOut){
-          console.log('Fallback logout succeeded')
-        }
-      }
+    } catch(e) {
+      console.error('Sign out error', e)
     } finally {
-      setSending(false)
-      setUser(null)
-      setProfile(null)
-      setEmail('')
-      setPassword('')
-      clearLocalAuthSession()
-      if(!signedOut){
-        console.warn('Sign out fallback active: cleared local session without server logout')
-      }
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if(/supabase|sb-|auth/i.test(key)) localStorage.removeItem(key)
+        })
+      } catch(_){}
       window.location.reload()
     }
   }
@@ -181,7 +112,7 @@ export default function Auth(){
         placeholder="Password"
         className="w-full rounded-full border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-red-500"
       />
-      <div className="flex gap-2 sm:col-span-2">
+      <div className="flex flex-wrap gap-2 sm:col-span-2">
         <button
           type="button"
           onClick={signIn}
@@ -198,8 +129,22 @@ export default function Auth(){
         >
           {sending ? 'Working...' : 'Sign up'}
         </button>
+        {needsConfirm && (
+          <button
+            type="button"
+            onClick={resendConfirmation}
+            disabled={!email || sending}
+            className="rounded-full border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Resend confirmation email
+          </button>
+        )}
       </div>
+      {needsConfirm && (
+        <p className="sm:col-span-2 text-xs text-amber-700">
+          Check your inbox and spam folder for a confirmation link. Use "Resend" if you haven't received it.
+        </p>
+      )}
     </div>
   )
 }
-

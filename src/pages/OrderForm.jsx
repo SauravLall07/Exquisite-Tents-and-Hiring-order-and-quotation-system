@@ -85,7 +85,7 @@ export default function OrderForm(){
 
         <label className="block">
           <span className="text-sm font-medium text-slate-700">Phone</span>
-          <input name="phone" value={form.phone} onChange={handleChange} placeholder="+44 7700 900123" className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:bg-white" />
+          <input name="phone" value={form.phone} onChange={handleChange} placeholder="+27 71 234 5678" className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus:bg-white" />
         </label>
 
         <div className="grid gap-4 lg:grid-cols-3">

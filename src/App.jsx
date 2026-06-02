@@ -2,8 +2,10 @@ import React from 'react'
 import AppRouter from './router'
 import { Link } from 'react-router-dom'
 import Auth from './components/Auth'
+import { useAuth } from './lib/AuthContext'
 
 export default function App(){
+  const { isStaff } = useAuth()
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
@@ -25,8 +27,8 @@ export default function App(){
             <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-slate-700">
               <Link to="/" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Home</Link>
               <Link to="/order" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Order</Link>
-              <Link to="/dashboard" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Staff</Link>
-              <Link to="/admin" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Admin</Link>
+              {isStaff && <Link to="/dashboard" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Staff</Link>}
+              {isStaff && <Link to="/admin" className="rounded-full px-4 py-2 transition hover:bg-slate-100">Admin</Link>}
             </div>
             <div className="flex items-center justify-end">
               <Auth />
