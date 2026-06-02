@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { supabase, getCurrentUser, onAuthChange, getProfile } from '../lib/supabaseClient'
+import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase, getCurrentUser, onAuthChange, getProfile } from '../lib/supabaseClient'
 
 export default function Auth(){
   const [email, setEmail] = useState('')
@@ -53,9 +53,94 @@ export default function Auth(){
     }
   }
 
+  function timeout(ms){
+    return new Promise((_, reject) => setTimeout(() => reject(new Error('Sign out timed out')), ms))
+  }
+
+  function clearLocalAuthSession(){
+    try {
+      Object.keys(localStorage).forEach(key => {
+        const lower = key.toLowerCase()
+        if(lower.includes('supabase') || lower.includes('sb-') || lower.includes('auth')){
+          localStorage.removeItem(key)
+        }
+      })
+      console.debug('Cleared local auth session storage')
+    } catch (e) {
+      console.warn('Failed to clear local auth session storage', e)
+    }
+  }
+
+  async function fetchLogoutFallback(accessToken){
+    if(!SUPABASE_URL){
+      console.warn('No SUPABASE_URL available for logout fallback')
+      return false
+    }
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+      console.debug('Fallback logout response', response.status, await response.text())
+      return response.ok
+    } catch (e) {
+      console.error('Fallback logout request failed', e)
+      return false
+    }
+  }
+
   async function signOut(){
-    const { error } = await supabase.auth.signOut()
-    if(error) alert('Sign out failed')
+    setSending(true)
+    let signedOut = false
+    console.log('Starting sign out...')
+    let session = null
+    try {
+      const sessionResult = await supabase.auth.getSession()
+      session = sessionResult.data?.session
+      console.log('Current session', session)
+    } catch (e) {
+      console.warn('Failed to get auth session before sign out', e)
+    }
+
+    try {
+      const { error } = await Promise.race([
+        supabase.auth.signOut(),
+        timeout(10000),
+      ])
+      if(error){
+        console.error('Sign out failed', error)
+        alert('Sign out failed: ' + error.message)
+      } else {
+        signedOut = true
+        console.log('User signed out successfully')
+      }
+    } catch (e) {
+      console.error('Sign out exception', e)
+      alert('Sign out failed: ' + (e?.message || 'unknown error'))
+      if(e?.message?.includes('timed out')){
+        console.log('Attempting fallback logout request')
+        signedOut = await fetchLogoutFallback(session?.access_token)
+        if(signedOut){
+          console.log('Fallback logout succeeded')
+        }
+      }
+    } finally {
+      setSending(false)
+      setUser(null)
+      setProfile(null)
+      setEmail('')
+      setPassword('')
+      clearLocalAuthSession()
+      if(!signedOut){
+        console.warn('Sign out fallback active: cleared local session without server logout')
+      }
+      window.location.reload()
+    }
   }
 
   if(user){
@@ -65,8 +150,12 @@ export default function Auth(){
           <div className="text-sm font-semibold text-slate-900">{user.email}</div>
           <div className="text-xs text-slate-500">{profile ? (profile.is_staff ? 'Staff member' : 'Customer') : 'Signed in'}</div>
         </div>
-        <button onClick={signOut} className="ml-auto rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800">
-          Sign out
+        <button
+          onClick={signOut}
+          disabled={sending}
+          className="ml-auto rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+        >
+          {sending ? 'Signing out...' : 'Sign out'}
         </button>
       </div>
     )
