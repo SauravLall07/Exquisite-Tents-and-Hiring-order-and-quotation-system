@@ -28,6 +28,9 @@ export default function Home(){
               <Link to="/order" className="inline-flex items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-700/20 transition hover:bg-red-800">
                 Get a Quote
               </Link>
+              <Link to="/my-orders" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
+                My Orders
+              </Link>
               <Link to="/dashboard" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
                 Staff Dashboard
               </Link>

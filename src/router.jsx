@@ -3,8 +3,10 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import OrderForm from './pages/OrderForm'
 import QuoteResult from './pages/QuoteResult'
+import MyOrders from './pages/MyOrders'
 import StaffDashboard from './pages/StaffDashboard'
 import AdminProfiles from './pages/AdminProfiles'
+import AdminPricing from './pages/AdminPricing'
 import { useAuth } from './lib/AuthContext'
 
 function StaffOnly({ children }){
@@ -21,8 +23,10 @@ export default function AppRouter(){
         <Route path="/" element={<Home/>} />
         <Route path="/order" element={<OrderForm/>} />
         <Route path="/quote" element={<QuoteResult/>} />
+        <Route path="/my-orders" element={<MyOrders/>} />
         <Route path="/dashboard" element={<StaffOnly><StaffDashboard/></StaffOnly>} />
         <Route path="/admin" element={<StaffOnly><AdminProfiles/></StaffOnly>} />
+        <Route path="/pricing" element={<StaffOnly><AdminPricing/></StaffOnly>} />
       </Routes>
     </div>
   )
