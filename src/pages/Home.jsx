@@ -2,10 +2,10 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 const serviceCards = [
-  { title: 'Tents', description: 'Elegant tents in various sizes to suit any occasion.' },
+  { title: 'Tents',     description: 'Elegant tents in various sizes to suit any occasion.' },
   { title: 'Furniture', description: 'Chairs, tables and more to complete your setup.' },
-  { title: 'Extras', description: 'Lighting, drapes, flooring and additional add-ons.' },
-  { title: 'Delivery', description: 'Delivery, setup and collection made easy.' },
+  { title: 'Extras',    description: 'Lighting, drapes, flooring and additional add-ons.' },
+  { title: 'Covers',    description: 'Custom covers and canopies for any event.' },
 ]
 
 export default function Home(){
@@ -28,6 +28,9 @@ export default function Home(){
               <Link to="/order" className="inline-flex items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-700/20 transition hover:bg-red-800">
                 Get a Quote
               </Link>
+              <Link to="/catalog" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
+                View Catalog
+              </Link>
               <Link to="/my-orders" className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
                 My Orders
               </Link>
@@ -45,11 +48,12 @@ export default function Home(){
             </div>
           </div>
 
-          <div className="relative h-[420px] overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.15),_transparent_28%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]" />
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1526260325294-o9bcd1aafb9a?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center filter saturate-110" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/90" />
-            <div className="relative h-full rounded-[2rem] border border-white/50 bg-slate-100 shadow-2xl shadow-slate-200/40" />
+          <div className="relative h-[420px] overflow-hidden rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-200/40">
+            <img
+              src="/hero-tent.jpg"
+              alt="Exquisite tent setup"
+              className="h-full w-full object-cover"
+            />
           </div>
         </div>
       </section>
@@ -67,7 +71,7 @@ export default function Home(){
               </div>
               <h3 className="text-lg font-semibold text-slate-900">{card.title}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">{card.description}</p>
-              <span className="mt-5 inline-flex items-center text-sm font-semibold text-red-700">View options →</span>
+              <Link to="/catalog" className="mt-5 inline-flex items-center text-sm font-semibold text-red-700">View options →</Link>
             </div>
           ))}
         </div>

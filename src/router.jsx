@@ -7,6 +7,8 @@ import MyOrders from './pages/MyOrders'
 import StaffDashboard from './pages/StaffDashboard'
 import AdminProfiles from './pages/AdminProfiles'
 import AdminPricing from './pages/AdminPricing'
+import Catalog from './pages/Catalog'
+import AdminCatalog from './pages/AdminCatalog'
 import { useAuth } from './lib/AuthContext'
 
 function StaffOnly({ children }){
@@ -27,6 +29,8 @@ export default function AppRouter(){
         <Route path="/dashboard" element={<StaffOnly><StaffDashboard/></StaffOnly>} />
         <Route path="/admin" element={<StaffOnly><AdminProfiles/></StaffOnly>} />
         <Route path="/pricing" element={<StaffOnly><AdminPricing/></StaffOnly>} />
+        <Route path="/catalog" element={<Catalog/>} />
+        <Route path="/catalog/manage" element={<StaffOnly><AdminCatalog/></StaffOnly>} />
       </Routes>
     </div>
   )

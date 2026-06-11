@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../lib/AuthContext'
 
@@ -8,11 +8,22 @@ export default function Auth(){
   const [password, setPassword] = useState('')
   const [sending, setSending] = useState(false)
   const [needsConfirm, setNeedsConfirm] = useState(false)
+  const emailRef = useRef(null)
+  const passwordRef = useRef(null)
+
+  function getFields(){
+    return {
+      e: email || emailRef.current?.value || '',
+      p: password || passwordRef.current?.value || '',
+    }
+  }
 
   async function signIn(){
+    const { e, p } = getFields()
+    if(!e || !p){ alert('Please enter your email and password.'); return }
     setSending(true)
     setNeedsConfirm(false)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email: e, password: p })
     setSending(false)
     if(error){
       const unconfirmed = /confirm|confirmation|verify|not confirmed/i.test(error.message)
@@ -25,11 +36,13 @@ export default function Auth(){
   }
 
   async function signUp(){
+    const { e, p } = getFields()
+    if(!e || !p){ alert('Please enter your email and password.'); return }
     setSending(true)
     setNeedsConfirm(false)
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: e,
+      password: p,
       options: { emailRedirectTo: window.location.origin },
     })
     setSending(false)
@@ -99,6 +112,7 @@ export default function Auth(){
         <div className="text-sm text-slate-500">Sign in with email and password, or create a new account.</div>
       </div>
       <input
+        ref={emailRef}
         value={email}
         onChange={e=>setEmail(e.target.value)}
         type="email"
@@ -106,6 +120,7 @@ export default function Auth(){
         className="w-full rounded-full border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-red-500"
       />
       <input
+        ref={passwordRef}
         value={password}
         onChange={e=>setPassword(e.target.value)}
         type="password"
@@ -116,7 +131,7 @@ export default function Auth(){
         <button
           type="button"
           onClick={signIn}
-          disabled={!email || !password || sending}
+          disabled={sending}
           className="rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {sending ? 'Working...' : 'Sign in'}
@@ -124,7 +139,7 @@ export default function Auth(){
         <button
           type="button"
           onClick={signUp}
-          disabled={!email || !password || sending}
+          disabled={sending}
           className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-200"
         >
           {sending ? 'Working...' : 'Sign up'}

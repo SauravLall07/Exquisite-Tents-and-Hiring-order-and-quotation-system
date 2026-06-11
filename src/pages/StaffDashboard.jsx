@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { TENT_TYPES } from '../lib/quoteCalculator'
 
@@ -607,6 +608,12 @@ export default function StaffDashboard(){
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${view === 'calendar' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
             >Calendar</button>
           </nav>
+          <Link
+            to="/catalog/manage"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            Catalog
+          </Link>
           <button
             onClick={() => exportCsv(filtered)}
             disabled={filtered.length === 0}
